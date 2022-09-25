@@ -2,8 +2,11 @@
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
 import HelloWorld from "./components/HelloWorld.vue"
+import { useScaledrone } from "./composables/useScaledrone"
 
 const channelId = import.meta.env.VITE_CHANNEL_ID
+
+const { isConnected } = useScaledrone()
 </script>
 
 <template>
@@ -14,6 +17,7 @@ const channelId = import.meta.env.VITE_CHANNEL_ID
     </a>
     <a href="https://vuejs.org/" target="_blank">
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
+      Connected: {{ isConnected }}
     </a>
   </div>
   <HelloWorld msg="Vite + Vue" />

@@ -27,5 +27,12 @@ export const useScaledrone = () => {
     })
   }
 
-  return { connect, isConnected, joinRoom, hasJoined, messages }
+  const publish = (message: string) => {
+    drone.publish({
+        room: room.name,
+        message
+    })
+  }
+
+  return { connect, publish, isConnected, joinRoom, hasJoined, messages }
 }

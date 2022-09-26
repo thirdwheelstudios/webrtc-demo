@@ -9,12 +9,18 @@ const channelId = import.meta.env.VITE_CHANNEL_ID
 
 const state = reactive({
   roomName: "",
+  message: "",
 })
 
-const { connect, isConnected, joinRoom, hasJoined, messages } = useScaledrone()
+const { connect, publish, isConnected, joinRoom, hasJoined, messages } =
+  useScaledrone()
 
 const onSubmit = () => {
   joinRoom(state.roomName)
+}
+
+const onMessageSubmit = () => {
+  publish(state.message)
 }
 
 onMounted(() => connect())
@@ -37,6 +43,12 @@ onMounted(() => connect())
       <input type="text" v-model="state.roomName" />
       <button type="submit" :disabled="!state.roomName.length || !isConnected">
         Join Room
+      </button>
+    </form>
+    <form @submit.prevent="onMessageSubmit">
+      <input type="text" v-model="state.message" />
+      <button type="submit" :disabled="!state.message.length || !isConnected">
+        Send Message
       </button>
     </form>
     {{ messages }}

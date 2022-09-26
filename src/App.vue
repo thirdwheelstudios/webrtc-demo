@@ -1,12 +1,23 @@
 <script setup lang="ts">
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
+import { onMounted, reactive } from "vue"
 import HelloWorld from "./components/HelloWorld.vue"
 import { useScaledrone } from "./composables/useScaledrone"
 
 const channelId = import.meta.env.VITE_CHANNEL_ID
 
-const { isConnected } = useScaledrone()
+const state = reactive({
+  roomName: "",
+})
+
+const { connect, isConnected, joinRoom, hasJoined, messages } = useScaledrone()
+
+const onSubmit = () => {
+  joinRoom(state.roomName)
+}
+
+onMounted(() => connect())
 </script>
 
 <template>
@@ -17,10 +28,19 @@ const { isConnected } = useScaledrone()
     </a>
     <a href="https://vuejs.org/" target="_blank">
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      Connected: {{ isConnected }}
+      Connected: {{ isConnected }} / Has Joined: {{ hasJoined }}
     </a>
   </div>
   <HelloWorld msg="Vite + Vue" />
+  <div>
+    <form @submit.prevent="onSubmit">
+      <input type="text" v-model="state.roomName" />
+      <button type="submit" :disabled="!state.roomName.length || !isConnected">
+        Join Room
+      </button>
+    </form>
+    {{ messages }}
+  </div>
 </template>
 
 <style scoped>

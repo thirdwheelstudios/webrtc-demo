@@ -1,5 +1,5 @@
-import { ref } from "vue"
-import { useScaledrone } from "./useScaledrone"
+import { ref, toRaw } from "vue"
+import { useScaledroneStore } from "../store"
 
 const mimeTypes = ["video/webm", "video/mp4"]
 
@@ -12,6 +12,8 @@ export const useWebRTC = () => {
       .filter((mimeType) => MediaRecorder.isTypeSupported(mimeType))
       .pop()
   )
+
+  const scaledroneStore = useScaledroneStore()
 
   const receivingTrack = ref<MediaStreamTrack>()
   const peerConnection = ref<RTCPeerConnection>()
@@ -40,16 +42,15 @@ export const useWebRTC = () => {
 
     peerConnection.value = new RTCPeerConnection(rtcConfig)
 
-    const { publish } = useScaledrone()
-
     peerConnection.value.onicecandidate = (event) => {
-      if (event.candidate) publish({ candidate: event.candidate })
+      if (event.candidate)
+        scaledroneStore.publish({ candidate: event.candidate })
     }
 
     if (isOfferer) {
       const localDesc = await peerConnection.value.createOffer()
       peerConnection.value.setLocalDescription(localDesc)
-      publish({ sdp: peerConnection.value.localDescription })
+      scaledroneStore.publish({ sdp: peerConnection.value.localDescription })
     }
 
     peerConnection.value.ontrack = (event) => {
@@ -66,26 +67,29 @@ export const useWebRTC = () => {
   }
 
   const startListeningToSignalServer = () => {
-    const { publish } = useScaledrone()
+    if (!scaledroneStore.room) return
 
-    // room.value?.on("data", async (message) => {
-    //   if (!peerConnection.value) return
-    //   if (message.sdp) {
-    //     // This is called after receiving an offer or answer from another peer
-    //     await peerConnection.value?.setRemoteDescription(
-    //       new RTCSessionDescription(message.sdp)
-    //     )
+    const room = toRaw(scaledroneStore.room)
+    room.on("data", async (message) => {
+      if (!peerConnection.value) return
+      if (message.sdp) {
+        // This is called after receiving an offer or answer from another peer
+        await peerConnection.value?.setRemoteDescription(
+          new RTCSessionDescription(message.sdp)
+        )
 
-    //     if (peerConnection.value.remoteDescription?.type === "offer") {
-    //       const localDesc = await peerConnection.value.createAnswer()
-    //       peerConnection.value.setLocalDescription(localDesc)
-    //       publish({ sdp: peerConnection.value.localDescription })
-    //     }
-    //   } else if (message.candidate) {
-    //     // Add the new ICE candidate to our connections remote description
-    //     await peerConnection.value.addIceCandidate(new RTCIceCandidate(message.candidate))
-    //   }
-    // })
+        if (peerConnection.value.remoteDescription?.type === "offer") {
+          const localDesc = await peerConnection.value.createAnswer()
+          peerConnection.value.setLocalDescription(localDesc)
+          scaledroneStore.publish({ sdp: peerConnection.value.localDescription })
+        }
+      } else if (message.candidate) {
+        // Add the new ICE candidate to our connections remote description
+        await peerConnection.value.addIceCandidate(
+          new RTCIceCandidate(message.candidate)
+        )
+      }
+    })
   }
 
   return {

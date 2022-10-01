@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
-import { onMounted, reactive } from "vue"
+import { computed, onMounted, reactive } from "vue"
 import HelloWorld from "./components/HelloWorld.vue"
-import { useScaledrone } from "./composables/useScaledrone"
 import { useWebRTC } from "./composables/useWebRTC"
+import { useScaledroneStore } from "./store"
 
 const channelId = import.meta.env.VITE_CHANNEL_ID
 
@@ -14,24 +14,27 @@ const state = reactive({
   isOffering: false,
 })
 
-const { connect, publish, isConnected, joinRoom, hasJoined, messages } =
-  useScaledrone()
+const scaledroneStore = useScaledroneStore()
 
-const { getRTCPeerConnection, } = useWebRTC()
+const { getRTCPeerConnection } = useWebRTC()
 
 const onSubmit = () => {
-  joinRoom(state.roomName)
+  scaledroneStore.joinRoom(state.roomName)
 }
 
 const onMessageSubmit = () => {
-  publish(state.message)
+  scaledroneStore.publish(state.message)
 }
 
 const getPeerConnection = async () => {
   const peer = await getRTCPeerConnection(state.isOffering)
 }
 
-onMounted(() => connect())
+const isConnected = computed(() => scaledroneStore.isConnected)
+const hasJoined = computed(() => scaledroneStore.hasJoined)
+const messages = computed(() => scaledroneStore.messages)
+
+onMounted(() => scaledroneStore.connect())
 </script>
 
 <template>

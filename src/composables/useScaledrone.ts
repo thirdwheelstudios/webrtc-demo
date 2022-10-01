@@ -1,38 +1,51 @@
 import { ref } from "vue"
 
 export const useScaledrone = () => {
-  let drone: Scaledrone
-  let room: Room
+  const drone = ref<Scaledrone>()
+  const room = ref<Room>()
   const isConnected = ref(false)
   const hasJoined = ref(false)
   const messages = ref<any[]>([])
 
   const joinRoom = (roomName: string) => {
-    room = drone.subscribe(roomName)
+    if (!drone.value) return
 
-    room.on("open", (error) => {
+    room.value = drone.value.subscribe(roomName)
+
+    room.value.on("open", (error) => {
       hasJoined.value = !error
     })
 
-    room.on("data", message => {
-        messages.value.push(message)
+    room.value.on("data", (message) => {
+      messages.value.push(message)
     })
   }
 
   const connect = () => {
-    drone = new Scaledrone(import.meta.env.VITE_CHANNEL_ID)
+    drone.value = new Scaledrone(import.meta.env.VITE_CHANNEL_ID)
 
-    drone.on("open", (error) => {
+    drone.value.on("open", (error) => {
       isConnected.value = !error
     })
   }
 
-  const publish = (message: string) => {
-    drone.publish({
-        room: room.name,
-        message
+  const publish = (message: any) => {
+    if (!drone.value) return
+
+    drone.value.publish({
+      room: room.value?.name ?? "",
+      message,
     })
   }
 
-  return { connect, publish, isConnected, joinRoom, hasJoined, messages }
+  return {
+    connect,
+    publish,
+    isConnected,
+    joinRoom,
+    drone,
+    room,
+    hasJoined,
+    messages,
+  }
 }

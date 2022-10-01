@@ -4,16 +4,20 @@
 import { onMounted, reactive } from "vue"
 import HelloWorld from "./components/HelloWorld.vue"
 import { useScaledrone } from "./composables/useScaledrone"
+import { useWebRTC } from "./composables/useWebRTC"
 
 const channelId = import.meta.env.VITE_CHANNEL_ID
 
 const state = reactive({
   roomName: "",
   message: "",
+  isOffering: false,
 })
 
 const { connect, publish, isConnected, joinRoom, hasJoined, messages } =
   useScaledrone()
+
+const { getRTCPeerConnection, } = useWebRTC()
 
 const onSubmit = () => {
   joinRoom(state.roomName)
@@ -21,6 +25,10 @@ const onSubmit = () => {
 
 const onMessageSubmit = () => {
   publish(state.message)
+}
+
+const getPeerConnection = async () => {
+  const peer = await getRTCPeerConnection(state.isOffering)
 }
 
 onMounted(() => connect())
@@ -51,6 +59,14 @@ onMounted(() => connect())
         Send Message
       </button>
     </form>
+    <input type="checkbox" v-model="state.isOffering" />
+    <label>Is Offering</label>
+    <button
+      :disabled="!state.roomName.length || !isConnected"
+      @click="getPeerConnection"
+    >
+      Get RTCPeerConnection
+    </button>
     {{ messages }}
   </div>
 </template>
